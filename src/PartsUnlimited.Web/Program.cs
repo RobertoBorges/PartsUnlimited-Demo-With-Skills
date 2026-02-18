@@ -131,24 +131,28 @@ builder.Services.AddHttpContextAccessor();
 // ---------------------------------------------------------------------------
 var app = builder.Build();
 
-// Run EF Core migrations and seed on startup (development only)
-if (app.Environment.IsDevelopment())
+// Run EF Core migrations and seed on startup (all environments)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PartsUnlimitedContext>();
-    // EnsureCreated creates tables from the model without requiring a migrations folder.
-    // Replace with db.Database.Migrate() once 'dotnet ef migrations add InitialCreate' has been run.
-    db.Database.EnsureCreated();
+    // Apply any pending migrations (creates schema on first run, applies deltas on upgrades)
+    await db.Database.MigrateAsync();
     await PartsUnlimitedDbInitializer.SeedAsync(db);
 }
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    // Only enforce HSTS/HTTPS redirect when NOT running behind a Kubernetes ingress that
+    // terminates TLS externally. Use the ASPNETCORE_FORWARDEDHEADERS_ENABLED env var
+    // (set automatically by App Service / ACA) or a custom K8S_INGRESS env var.
+    var isBehindIngress = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("K8S_INGRESS"));
+    if (!isBehindIngress)
+    {
+        app.UseHsts();
+        app.UseHttpsRedirection();
+    }
 }
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 

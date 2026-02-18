@@ -8,9 +8,10 @@ metadata:
 data:
   ASPNETCORE_ENVIRONMENT: "Production"
   ASPNETCORE_URLS: "http://+:8080"
-  KeyVault__VaultUri: {{ .Values.keyvault.vaultUri | quote }}
+  K8S_INGRESS: "true"
+  Azure__KeyVault__VaultUri: {{ .Values.keyvault.vaultUri | quote }}
   ApplicationInsights__ConnectionString: {{ .Values.appInsights.connectionString | quote }}
-  ConnectionStrings__DefaultConnection: >-
+  ConnectionStrings__DefaultConnectionString: >-
     Server={{ .Values.sql.server }};
     Database={{ .Values.sql.database }};
     Authentication=Active Directory Default;

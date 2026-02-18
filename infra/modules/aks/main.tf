@@ -50,25 +50,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   http_application_routing_enabled = false
 
   # Auto-upgrade channel
-  automatic_upgrade_channel = "patch"
-
-  maintenance_window_auto_upgrade {
-    frequency   = "Weekly"
-    interval    = 1
-    duration    = 4
-    day_of_week = "Sunday"
-    utc_offset  = "+00:00"
-    start_time  = "02:00"
-  }
-
-  maintenance_window_node_os {
-    frequency   = "Weekly"
-    interval    = 1
-    duration    = 4
-    day_of_week = "Saturday"
-    utc_offset  = "+00:00"
-    start_time  = "02:00"
-  }
+  automatic_channel_upgrade = "patch"
 }
 
 # User node pool for the application workloads
@@ -84,10 +66,9 @@ resource "azurerm_kubernetes_cluster_node_pool" "app" {
   tags                  = var.tags
 
   # Cluster autoscaler
-  auto_scaling_enabled = true
-  min_count            = 1
-  max_count            = 5
-  node_count           = var.user_node_count
+  enable_auto_scaling = true
+  min_count           = 1
+  max_count           = 5
 
   upgrade_settings {
     max_surge = "33%"

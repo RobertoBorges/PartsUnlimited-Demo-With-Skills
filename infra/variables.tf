@@ -1,4 +1,10 @@
 # ─── Core ───────────────────────────────────────────────────────────────────
+variable "subscription_id" {
+  description = "Azure subscription ID. Set in terraform.tfvars (gitignored) or ARM_SUBSCRIPTION_ID env var."
+  type        = string
+  sensitive   = true
+}
+
 variable "location" {
   description = "Azure region for all resources."
   type        = string
@@ -40,11 +46,17 @@ variable "entra_client_secret" {
   sensitive   = true
 }
 
+variable "deployer_ips" {
+  description = "Public IPs of the machine running Terraform — allowed through Key Vault network ACL."
+  type        = list(string)
+  default     = ["142.113.37.92", "172.172.34.115"]
+}
+
 # ─── AKS ────────────────────────────────────────────────────────────────────
 variable "aks_kubernetes_version" {
   description = "Kubernetes version for the AKS cluster."
   type        = string
-  default     = "1.29"
+  default     = "1.32"
 }
 
 variable "aks_system_node_count" {

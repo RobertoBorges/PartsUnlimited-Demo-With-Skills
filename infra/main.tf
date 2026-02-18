@@ -50,7 +50,6 @@ module "acr" {
   location            = var.location
   prefix              = local.prefix
   tags                = local.tags
-  aks_kubelet_identity_object_id = module.aks.kubelet_identity_object_id
 }
 
 # ─── Azure Key Vault ─────────────────────────────────────────────────────────
@@ -68,6 +67,7 @@ module "keyvault" {
   azure_ml_base_url     = var.azure_ml_base_url
   subnet_id             = module.networking.private_endpoint_subnet_id
   vnet_id               = module.networking.vnet_id
+  deployer_ips          = var.deployer_ips
 }
 
 # ─── Azure SQL Database ───────────────────────────────────────────────────────

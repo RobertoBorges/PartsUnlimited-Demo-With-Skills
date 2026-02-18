@@ -12,7 +12,7 @@ resource "azurerm_mssql_server" "main" {
   azuread_administrator {
     login_username              = var.workload_identity_name
     object_id                   = var.workload_identity_id
-    azuread_authentication_only = false
+    azuread_authentication_only = true
   }
 
   identity {
@@ -26,6 +26,7 @@ resource "azurerm_mssql_database" "main" {
   sku_name                    = var.sku_name
   max_size_gb                 = 32
   zone_redundant              = false
+  storage_account_type        = "Local"  # Geo-redundant backups blocked by subscription policy
   auto_pause_delay_in_minutes = -1  # Disable serverless auto-pause for prod
   tags                        = var.tags
 }

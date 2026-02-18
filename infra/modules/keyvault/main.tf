@@ -9,12 +9,13 @@ resource "azurerm_key_vault" "main" {
   enable_rbac_authorization   = true          # RBAC only — no access policies
   purge_protection_enabled    = true
   soft_delete_retention_days  = 7
-  public_network_access_enabled = false        # Private endpoint only (prod)
+  public_network_access_enabled = true
   tags                        = var.tags
 
   network_acls {
     bypass         = "AzureServices"
-    default_action = "Deny"
+    default_action = "Allow"  # Dev: RBAC controls access; prod should use private endpoint only
+    ip_rules       = []
   }
 }
 
@@ -74,6 +75,10 @@ resource "azurerm_key_vault_secret" "entra_client_id" {
   value        = var.entra_client_id
   key_vault_id = azurerm_key_vault.main.id
   depends_on   = [azurerm_role_assignment.deployer_kv_secrets_officer]
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 resource "azurerm_key_vault_secret" "entra_client_secret" {
@@ -81,6 +86,10 @@ resource "azurerm_key_vault_secret" "entra_client_secret" {
   value        = var.entra_client_secret
   key_vault_id = azurerm_key_vault.main.id
   depends_on   = [azurerm_role_assignment.deployer_kv_secrets_officer]
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 resource "azurerm_key_vault_secret" "azure_ml_account_key" {

@@ -1,0 +1,18 @@
+# Ignore build artifacts
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+
+# Ignore Terraform state and secrets
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/*.tfvars
+infra/tfplan*
+
+# Ignore reports  
+reports/
+
+# Ignore test results
+**/TestResults/

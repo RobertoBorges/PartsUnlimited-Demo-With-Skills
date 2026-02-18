@@ -6,7 +6,7 @@
 
 ---
 
-## Current Status: ✅ Phase 3 Complete — Ready for Phase 4 (Deployment to Azure)
+## Current Status: ✅ Phase 4 Complete — Ready for Phase 5 (CI/CD Pipeline Setup)
 
 ---
 
@@ -29,7 +29,7 @@
 | **Phase 1** — Planning & Assessment | ✅ Complete | Feb 18, 2026 | Report generated |
 | **Phase 2** — Code Modernization | ✅ Complete | Feb 18, 2026 | All tasks completed |
 | **Phase 3** — Infrastructure Generation | ✅ Complete | Feb 18, 2026 | Terraform + Helm generated |
-| **Phase 4** — Deployment to Azure | ⬜ Not Started | — | AKS |
+| **Phase 4** — Deployment to Azure | ✅ Complete | Feb 18, 2026 | AKS v1.32, Canada Central, 2/2 pods Running |
 | **Phase 5** — CI/CD Pipeline Setup | ⬜ Not Started | — | GitHub Actions |
 
 ---
@@ -39,10 +39,10 @@
 - [x] Phase 1 — Planning & Assessment
 - [x] Phase 2 — Code Modernization
 - [x] Phase 3 — Infrastructure Generation
-- [ ] Phase 4 — Deployment to Azure
+- [x] Phase 4 — Deployment to Azure
 - [ ] Phase 5 — CI/CD Pipeline Setup
 
-**Completion:** 60% (3 of 5 phases complete)
+**Completion:** 80% (4 of 5 phases complete)
 
 ---
 
@@ -191,3 +191,48 @@ terraform apply tfplan
 | Terraform AzureRM Provider | https://registry.terraform.io/providers/hashicorp/azurerm/latest |
 | Helm Documentation | https://helm.sh/docs/ |
 | Azure Developer CLI (azd) | https://learn.microsoft.com/azure/developer/azure-developer-cli/ |
+
+---
+
+## Phase 4 Deliverables — Deployment to Azure ✅
+
+### Deployed Infrastructure (Canada Central)
+
+| Resource | Name | Details |
+|---|---|---|
+| AKS Cluster | `aks-partsunlimited-dev` | K8s v1.32, Standard tier, 3 nodes |
+| Container Registry | `acrpartsunlimiteddevy5zz` | Image: `partsunlimited:latest` |
+| SQL Server | `sql-partsunlimited-dev` | v12.0, AD-only auth, Local backup |
+| SQL Database | `sqldb-partsunlimited` | GP_Gen5_2, 32GB, Local redundancy |
+| Key Vault | `kv-partsunlimited-dev` | RBAC, Secrets: EntraClientId, EntraClientSecret |
+| Application Insights | `appi-partsunlimited-dev` | Workspace-based, Canada Central |
+
+### Application Status
+
+| Component | Status | Details |
+|---|---|---|
+| App Pods | ✅ 2/2 Running | `partsunlimited` namespace `default` |
+| NGINX Ingress | ✅ 2/2 Running | External IP: `20.48.128.13` |
+| OIDC Federation | ✅ Configured | Workload Identity for Key Vault access |
+| Entra ID Auth | ✅ Configured | Redirect URI: `http://20.48.128.13/signin-oidc` |
+| DB Schema | ✅ Created | EF Core `InitialCreate` migration applied on first pod start |
+| Homepage | ✅ HTTP 200 | Categories + products loading from Azure SQL |
+
+### Bug Fixes Applied (Post-Deployment)
+
+| Issue | Root Cause | Fix |
+| --- | --- | --- |
+| `Invalid object name 'Categories'` | `EnsureCreated()` gated on `IsDevelopment()` only; Terraform created empty DB so no schema existed | Generated EF Core migration (`InitialCreate`), changed to `db.Database.MigrateAsync()` in all environments |
+| EF Core decimal precision warnings | 5 `decimal` properties missing `HasColumnType` in `OnModelCreating` | Added `HasColumnType("decimal(18,2)")` for `CartItem.UnitPrice`, `Order.Total`, `OrderDetail.UnitPrice`, `Product.Price`, `Product.SalePrice` |
+| HTTPS redirect warning | `UseHttpsRedirection()` unconditionally registered; app runs HTTP-only behind NGINX ingress | Conditionalized on `K8S_INGRESS` env var; added `K8S_INGRESS=true` to Helm ConfigMap |
+| Old Docker image running after rebuild | `imagePullPolicy: IfNotPresent` cached previous `latest` image on AKS node | Changed to `imagePullPolicy: Always` in Helm values |
+
+### Deployment Report
+
+See [reports/Deployment-Report.md](Deployment-Report.md) for full deployment details.
+
+### Recommended Follow-ups
+
+1. **DNS Setup**: Map a domain to `20.48.128.13`
+2. **TLS**: Add cert-manager + Let's Encrypt to the AKS cluster
+3. **Phase 5**: Run `/phase5-setupcicd` to configure GitHub Actions CI/CD pipeline

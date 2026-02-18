@@ -26,7 +26,7 @@ terraform {
 }
 
 provider "azurerm" {
-  subscription_id = "3464f809-852d-45e3-846c-f5411419cc83"
+  subscription_id = var.subscription_id
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
@@ -42,16 +42,12 @@ provider "azuread" {}
 
 provider "helm" {
   kubernetes {
-    host                   = module.aks.kube_config.host
-    client_certificate     = base64decode(module.aks.kube_config.client_certificate)
-    client_key             = base64decode(module.aks.kube_config.client_key)
-    cluster_ca_certificate = base64decode(module.aks.kube_config.cluster_ca_certificate)
+    config_path    = "~/.kube/config"
+    config_context = "aks-partsunlimited-dev"
   }
 }
 
 provider "kubernetes" {
-  host                   = module.aks.kube_config.host
-  client_certificate     = base64decode(module.aks.kube_config.client_certificate)
-  client_key             = base64decode(module.aks.kube_config.client_key)
-  cluster_ca_certificate = base64decode(module.aks.kube_config.cluster_ca_certificate)
+  config_path    = "~/.kube/config"
+  config_context = "aks-partsunlimited-dev"
 }

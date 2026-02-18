@@ -34,6 +34,13 @@ public class PartsUnlimitedContext : DbContext, IPartsUnlimitedContext
         modelBuilder.Entity<Raincheck>().HasKey(r => r.RaincheckId);
         modelBuilder.Entity<Store>().HasKey(s => s.StoreId);
 
+        // Explicit decimal precision to avoid silent SQL truncation (EF Core warning EF30000)
+        modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<Product>().Property(p => p.SalePrice).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<CartItem>().Property(c => c.UnitPrice).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<Order>().Property(o => o.Total).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<OrderDetail>().Property(od => od.UnitPrice).HasColumnType("decimal(18,2)");
+
         modelBuilder.Entity<Product>()
             .HasOne(p => p.Category)
             .WithMany(c => c.Products)
