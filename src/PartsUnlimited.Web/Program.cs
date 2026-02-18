@@ -31,6 +31,9 @@ if (!builder.Environment.IsDevelopment())
 // Falls back to cookie-only auth in Development when AzureAd is not configured,
 // so the app can be run locally without an Entra ID app registration.
 // ---------------------------------------------------------------------------
+// Register LayoutDataFilter for global MVC filter (populates ViewBag.Categories etc.)
+builder.Services.AddScoped<LayoutDataFilter>();
+
 var azureAdClientId = builder.Configuration["AzureAd:ClientId"];
 var isEntraIdConfigured = !string.IsNullOrWhiteSpace(azureAdClientId)
     && !azureAdClientId.StartsWith('<');
@@ -42,7 +45,7 @@ if (isEntraIdConfigured)
         .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
     builder.Services
-        .AddControllersWithViews()
+        .AddControllersWithViews(options => options.Filters.AddService<LayoutDataFilter>())
         .AddMicrosoftIdentityUI();
 }
 else
@@ -57,7 +60,7 @@ else
             options.AccessDeniedPath = "/Account/AccessDenied";
         });
 
-    builder.Services.AddControllersWithViews();
+    builder.Services.AddControllersWithViews(options => options.Filters.AddService<LayoutDataFilter>());
 }
 builder.Services.AddAuthorization(options =>
 {

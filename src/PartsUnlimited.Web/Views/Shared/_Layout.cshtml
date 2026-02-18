@@ -2,77 +2,156 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Parts Unlimited</title>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] – Parts Unlimited</title>
+    <link rel="stylesheet" href="~/css/bootstrap.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/jquery-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Account.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ShoppingCart.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Store.css" asp-append-version="true" />
+    <script src="~/Scripts/modernizr-2.8.3.js"></script>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-inverse navbar-fixed-top">
+        <nav class="navbar navbar-default">
             <div class="container">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                            data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Parts Unlimited</a>
+                <div class="primary-menu">
+                    <div class="pull-left logo">
+                        <a class="block logo-image" asp-area="" asp-controller="Home" asp-action="Index">
+                            <img src="~/Images/unlimited_logo.png" alt="Parts Unlimited logo" />
+                        </a>
+                        <a class="block" asp-area="" asp-controller="Home" asp-action="Index">
+                            <h1>Parts Unlimited</h1>
+                            <h2>a Fabrikam subsidiary</h2>
+                        </a>
+
+                        <div class="visible-xs cart">
+                            <a asp-area="" asp-controller="ShoppingCart" asp-action="Index"
+                               class="head-link" id="shopping-cart-link"></a>
+                        </div>
+                    </div>
+
+                    <div class="pull-right navigation">
+                        <div class="navbar-header">
+                            <button type="button" class="navbar-toggle collapsed"
+                                    data-toggle="collapse" data-target="#collapse-header-nav">
+                                <span class="sr-only">Toggle navigation</span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </button>
+                        </div>
+                        <div class="collapse navbar-collapse" id="collapse-header-nav">
+                            <ul class="nav navbar-nav navbar-right">
+                                <li class="hidden-xs">
+                                    <div id="search-link-box">
+                                        <form asp-area="" asp-controller="Search" asp-action="Index" method="get">
+                                            <input type="text" name="q" class="form-control" placeholder="Search" />
+                                            <input type="submit" id="search-link" value="" />
+                                        </form>
+                                    </div>
+                                </li>
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    <li>
+                                        <a asp-area="" asp-controller="ShoppingCart" asp-action="Index"
+                                           class="head-link hidden-xs" id="shopping-cart-link"></a>
+                                    </li>
+                                    @if (User.IsInRole("Administrator") || User.IsInRole("ManageStore"))
+                                    {
+                                        <li>
+                                            <a asp-area="Admin" asp-controller="StoreManager" asp-action="Index"
+                                               class="head-link" id="admin-link">Admin</a>
+                                        </li>
+                                    }
+                                    <li class="dropdown">
+                                        <a href="#" class="head-link dropdown-toggle" id="profile-link"
+                                           data-toggle="dropdown" role="button" aria-expanded="false">
+                                            Account
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-right">
+                                            <li><a asp-area="" asp-controller="Orders" asp-action="Index">My Orders</a></li>
+                                            <li role="separator" class="divider"></li>
+                                            <li>
+                                                <a asp-area="MicrosoftIdentity" asp-controller="Account"
+                                                   asp-action="SignOut">Sign Out</a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li>
+                                        <a asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignIn"
+                                           class="head-link" id="profile-link">Sign In</a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li><a asp-area="" asp-controller="Store" asp-action="Index">Shop</a></li>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li><a asp-area="" asp-controller="ShoppingCart" asp-action="Index">Cart</a></li>
-                            <li><a asp-area="" asp-controller="Orders" asp-action="Index">Orders</a></li>
-                            @if (User.IsInRole("Administrator") || User.IsInRole("ManageStore"))
+            </div>
+
+            <div class="category-menu">
+                <div class="container">
+                    <div class="hidden-xs">
+                        <ul>
+                            @if (ViewBag.Categories != null)
                             {
-                                <li><a asp-area="Admin" asp-controller="StoreManager" asp-action="Index">Admin</a></li>
+                                foreach (var cat in (IEnumerable<PartsUnlimited.Models.Category>)ViewBag.Categories)
+                                {
+                                    <li>
+                                        <a asp-area="" asp-controller="Store" asp-action="Browse"
+                                           asp-route-categoryId="@cat.CategoryId">@cat.Name</a>
+                                    </li>
+                                }
                             }
-                            <li>
-                                <form asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignOut"
-                                      method="post" id="logoutForm">
-                                    <button type="submit" class="btn btn-link navbar-btn navbar-link">
-                                        Sign out (@User.Identity.Name)
-                                    </button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li><a asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignIn">Sign In</a></li>
-                        }
-                        <li>
-                            <form asp-area="" asp-controller="Search" asp-action="Index" method="get">
-                                <input type="text" name="q" class="form-control" placeholder="Search..." />
-                                <button type="submit" class="btn btn-default">Search</button>
-                            </form>
-                        </li>
-                    </ul>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </nav>
+
+        <div class="visible-xs search-box">
+            <form asp-area="" asp-controller="Search" asp-action="Index" method="get">
+                <input type="text" name="q" class="form-control" placeholder="Search" />
+                <input type="submit" value="" />
+            </form>
+        </div>
     </header>
 
     @RenderSection("prebody", required: false)
 
-    <div class="container body-content">
+    <div class="container">
         @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - Parts Unlimited</p>
-        </footer>
     </div>
+    <div class="clearfix"></div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-    <!-- SignalR client -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="pull-left-sm pull-left-md">
+                            &copy; @DateTime.UtcNow.Year Microsoft. Parts Unlimited.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="pull-left-sm pull-right-md">
+                            All rights reserved. Your payments are safe and secure.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/Scripts/jquery-3.1.1.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.12.1.min.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/UI-Initialization.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     @await RenderSectionAsync("scripts", required: false)
 </body>

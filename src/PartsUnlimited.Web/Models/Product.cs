@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
 
 namespace PartsUnlimited.Models;
 
@@ -37,7 +36,6 @@ public class Product
     public virtual List<OrderDetail> OrderDetails { get; set; } = [];
 
     [ScaffoldColumn(false)]
-    [BindNever]
     [Required]
     public DateTime Created { get; set; }
 

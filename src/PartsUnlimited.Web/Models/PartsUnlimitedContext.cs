@@ -22,7 +22,7 @@ public class PartsUnlimitedContext : DbContext, IPartsUnlimitedContext
     public DbSet<Raincheck> RainChecks => Set<Raincheck>();
     public DbSet<Store> Stores => Set<Store>();
 
-    public EntityEntry Entry(object entity) => base.Entry(entity);
+    public new EntityEntry Entry(object entity) => base.Entry(entity);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
