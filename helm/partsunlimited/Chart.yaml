@@ -1,0 +1,12 @@
+apiVersion: v2
+name: partsunlimited
+description: PartsUnlimited e-commerce web application (ASP.NET Core 8 on AKS)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - partsunlimited
+  - dotnet
+  - ecommerce
+maintainers:
+  - name: PartsUnlimited Team

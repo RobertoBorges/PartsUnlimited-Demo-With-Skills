@@ -1,0 +1,26 @@
+# Azure Developer CLI (azd) configuration
+# https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-schema
+
+name: partsunlimited
+metadata:
+  template: partsunlimited@1.0.0
+
+services:
+  web:
+    project: ./src/PartsUnlimited.Web
+    language: csharp
+    host: aks
+    docker:
+      path: ./src/PartsUnlimited.Web/Dockerfile
+      context: ./src/PartsUnlimited.Web
+    k8s:
+      namespace: default
+      deploymentName: partsunlimited
+
+infra:
+  provider: terraform
+  path: ./infra
+  module: ""
+
+pipeline:
+  provider: github

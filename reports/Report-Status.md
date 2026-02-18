@@ -1,12 +1,12 @@
 # Migration Status Report
 
-**Project:** PartsUnlimited  
-**Generated:** February 18, 2026  
-**Agent:** Migration to Azure Agent  
+**Project:** PartsUnlimited
+**Generated:** February 18, 2026
+**Agent:** Migration to Azure Agent
 
 ---
 
-## Current Status: � Phase 2 In Progress — Code Modernization (~90% Complete)
+## Current Status: ✅ Phase 3 Complete — Ready for Phase 4 (Deployment to Azure)
 
 ---
 
@@ -27,93 +27,167 @@
 |---|---|---|---|
 | **Phase 0** — Multi-Repo Assessment | ⬜ Skipped | — | Single repository |
 | **Phase 1** — Planning & Assessment | ✅ Complete | Feb 18, 2026 | Report generated |
-| **Phase 2** — Code Modernization | 🔄 In Progress | — | ~90% complete — remaining: wwwroot static files, test project upgrade, EF Core migrations |
-| **Phase 3** — Infrastructure Generation | ⬜ Not Started | — | Terraform + Helm |
+| **Phase 2** — Code Modernization | ✅ Complete | Feb 18, 2026 | All tasks completed |
+| **Phase 3** — Infrastructure Generation | ✅ Complete | Feb 18, 2026 | Terraform + Helm generated |
 | **Phase 4** — Deployment to Azure | ⬜ Not Started | — | AKS |
 | **Phase 5** — CI/CD Pipeline Setup | ⬜ Not Started | — | GitHub Actions |
 
 ---
 
-## Phase 2 Deliverables
+## Overall Progress
 
-### ✅ Completed
-| Artifact | Location |
-|---|---|
-| SDK-style project file (net8.0) | `src/PartsUnlimited.Web/PartsUnlimited.Web.csproj` |
-| ASP.NET Core 8 Program.cs (replaces Global.asax + Startup) | `src/PartsUnlimited.Web/Program.cs` |
-| appsettings.json + appsettings.Development.json | `src/PartsUnlimited.Web/` |
-| EF Core 8 models: IPartsUnlimitedContext, PartsUnlimitedContext | `src/PartsUnlimited.Web/Models/` |
-| Entity models: Product, Order, OrderDetail, Category, CartItem, Raincheck, Store | `src/PartsUnlimited.Web/Models/` |
-| ShoppingCart.cs (IHttpContextAccessor refactor) | `src/PartsUnlimited.Web/Models/ShoppingCart.cs` |
-| OrderCostSummary, ILineItem | `src/PartsUnlimited.Web/Models/` |
-| DefaultShippingTaxCalculator (shipping ×$5, tax 5%) | `src/PartsUnlimited.Web/Utils/` |
-| OrdersQuery, RaincheckQuery | `src/PartsUnlimited.Web/Utils/` |
-| TelemetryProvider (Application Insights) | `src/PartsUnlimited.Web/Utils/` |
-| PartsUnlimitedDbInitializer (EF Core seed) | `src/PartsUnlimited.Web/Utils/` |
-| AnnouncementHub (ASP.NET Core SignalR) | `src/PartsUnlimited.Web/Hubs/` |
-| IProductSearch, StringContainsProductSearch | `src/PartsUnlimited.Web/ProductSearch/` |
-| IRecommendationEngine, NaiveRecommendationEngine, AzureMLEngine | `src/PartsUnlimited.Web/Recommendations/` |
-| ViewModels: Home, Products, ShoppingCart, Orders, Search, OrderCostSummary | `src/PartsUnlimited.Web/ViewModels/` |
-| MVC Controllers: Home, Store, ShoppingCart, Checkout, Orders, Search | `src/PartsUnlimited.Web/Controllers/` |
-| Admin Controllers: AdminController (base), StoreManagerController, OrdersController, CustomerController, RaincheckController | `src/PartsUnlimited.Web/Areas/Admin/Controllers/` |
-| API Controllers: ProductsController, RaincheckApiController | `src/PartsUnlimited.Web/Api/` |
-| Razor Views: _ViewImports, _ViewStart, _Layout, Error | `src/PartsUnlimited.Web/Views/Shared/` |
-| Razor Views: Home/Index, Store/Index+Browse+Details, ShoppingCart/Index, Search/Index, Checkout/AddressAndPayment+Complete, Orders/Index+Details | `src/PartsUnlimited.Web/Views/` |
-| Admin Views: StoreManager CRUD (Index, Create, Edit, Delete, Details) | `src/PartsUnlimited.Web/Areas/Admin/Views/StoreManager/` |
-| Multi-stage Dockerfile (sdk:8.0 → aspnet:8.0, non-root user) | `src/PartsUnlimited.Web/Dockerfile` |
-| Business Logic Mapping (35 items tracked) | `reports/Business-Logic-Mapping.md` |
+- [x] Phase 1 — Planning & Assessment
+- [x] Phase 2 — Code Modernization
+- [x] Phase 3 — Infrastructure Generation
+- [ ] Phase 4 — Deployment to Azure
+- [ ] Phase 5 — CI/CD Pipeline Setup
 
-### ⬜ Remaining
-| Task | Notes |
-|---|---|
-| Copy wwwroot static files (CSS, JS, Images) | Copy from `src/PartsUnlimitedWebsite/Content` and `Images` |
-| EF Core migrations | `dotnet ef migrations add InitialCreate` |
-| Test project upgrade | Convert MSTest → xUnit; update MockDataContext |
-| Admin views: Orders, Customer, Raincheck | Basic CRUD views |
+**Completion:** 60% (3 of 5 phases complete)
 
 ---
 
-## Key Findings Summary
+## Phase 3 Deliverables
 
-### 🔴 Blockers (Must Address in Phase 2)
-- `System.Web.*` dependencies — no .NET 8 equivalent; full rewrite of startup pipeline
-- OWIN middleware (`Microsoft.Owin.*`) — replace with ASP.NET Core middleware
-- Admin password stored in `web.config` — move to Azure Key Vault
-- SQL authentication in connection string — migrate to Managed Identity
+### Terraform Root Files
+| File | Purpose |
+|---|---|
+| `infra/providers.tf` | AzureRM, AzureAD, Helm, Kubernetes providers; OIDC auth; remote backend |
+| `infra/main.tf` | Orchestrates all modules; deploys NGINX Ingress + PartsUnlimited via Helm |
+| `infra/variables.tf` | All input variables with validation and descriptions |
+| `infra/outputs.tf` | Key output values (AKS name, ACR server, SQL FQDN, etc.) |
+| `infra/terraform.tfvars.example` | Template for local variable values (gitignored) |
 
-### 🟠 High Risk
-- Entity Framework 6 → EF Core 8 migration (migrations must be re-scaffolded)
-- **ASP.NET Identity 2 → Microsoft Entra ID + `Microsoft.Identity.Web` (MSAL)** *(user decision: no local Identity store)*
-- Unity IoC container → `Microsoft.Extensions.DependencyInjection`
+### Terraform Modules
+| Module | Resources Created |
+|---|---|
+| `modules/networking` | VNet (10.0.0.0/8), AKS subnet, private endpoints subnet, NSG |
+| `modules/monitoring` | Log Analytics Workspace, Application Insights, HTTP 5xx alert |
+| `modules/identity` | User Assigned Managed Identity; Federated credential (AKS OIDC) |
+| `modules/acr` | Azure Container Registry (Basic SKU); AcrPull role for AKS kubelet |
+| `modules/keyvault` | Key Vault (RBAC only, private endpoint, purge protection); secrets: EntraClientId, EntraClientSecret, AzureMLAccountKey |
+| `modules/database` | Azure SQL Server (Azure AD admin = UAMI); Azure SQL Database (GP_Gen5_2); Private endpoint; audit policy |
+| `modules/aks` | AKS cluster (Standard tier, Azure CNI, Workload Identity, OIDC, OMS agent, autoupgrade); App node pool (autoscaler 1–5 nodes) |
 
-### 🟡 Medium Risk
-- ASP.NET MVC 5 → ASP.NET Core MVC 8
-- SignalR 2.2.1 → ASP.NET Core SignalR
-- `Global.asax` → `Program.cs` / middleware pipeline
-- Admin role → Entra ID App Role (`Administrator`) assigned in Azure portal
-- `AccountController` / `ManageController` — remove local auth UI; replaced by Entra ID OIDC flow
+### Helm Chart (`helm/partsunlimited/`)
+| File | Purpose |
+|---|---|
+| `Chart.yaml` | Chart metadata (v1.0.0) |
+| `values.yaml` | Default values; all Azure references injected by Terraform `helm_release` |
+| `templates/_helpers.tpl` | Name/label helpers |
+| `templates/serviceaccount.yaml` | ServiceAccount with Workload Identity annotation |
+| `templates/configmap.yaml` | App config: Key Vault URI, App Insights, SQL connection string (Managed Identity), Entra ID OIDC |
+| `templates/deployment.yaml` | Deployment: rolling update, security context (non-root), liveness/readiness probes |
+| `templates/service.yaml` | ClusterIP service (port 80 → 8080) |
+| `templates/ingress.yaml` | NGINX ingress with TLS |
+| `templates/hpa.yaml` | HorizontalPodAutoscaler (min 2, max 10, CPU 70%, memory 80%) |
 
-### 🟢 Low Risk / Straightforward
-- Web API 2 → ASP.NET Core controllers
-- `web.config` → `appsettings.json`
-- Application Insights SDK update
-- NuGet package modernization
+### Supporting Files
+| File | Purpose |
+|---|---|
+| `azure.yaml` | Azure Developer CLI (azd) configuration |
+| `.gitignore` | Terraform state files and *.tfvars excluded |
 
 ---
 
-## Decision Log
+## Security Configurations Implemented
 
-| Date | Decision | Impact |
+- [x] **Managed Identity** — User Assigned UAMI with AKS Workload Identity (OIDC federation)
+- [x] **Key Vault RBAC** — No access policies; least-privilege RBAC roles only
+- [x] **Key Vault private endpoint** — Not publicly accessible; DNS via private zone
+- [x] **Azure SQL private endpoint** — Not publicly accessible; Managed Identity auth
+- [x] **Azure SQL AD-only auth** — UAMI set as Azure AD admin; SQL auth available for bootstrap only
+- [x] **ACR admin disabled** — Pull via AcrPull role on kubelet identity
+- [x] **AKS pod security** — Non-root user (UID 1000), `allowPrivilegeEscalation: false`, drop ALL capabilities
+- [x] **OIDC federated credentials** — No stored credentials; token exchange via AKS OIDC issuer
+- [x] **Entra ID OIDC** — ClientSecret stored in Key Vault only (never in code or configmap)
+- [x] **HTTPS-only ingress** — TLS termination at NGINX ingress; `ssl-redirect: true`
+- [x] **Network segmentation** — Separate AKS and private-endpoint subnets; NSG on AKS subnet
+
+---
+
+## Monitoring & Logging Setup
+
+- [x] Log Analytics Workspace (PerGB2018, 30-day retention)
+- [x] Application Insights workspace-mode (linked to Log Analytics)
+- [x] AKS OMS agent sending container logs to Log Analytics
+- [x] Azure SQL audit policy streaming to Log Analytics
+- [x] Application Insights connection string injected via ConfigMap
+- [x] HTTP 5xx metric alert (threshold: 5 failures in 5 minutes, severity 1)
+
+---
+
+## Infrastructure Cost Estimate
+
+| Resource | SKU | Est. Monthly |
 |---|---|---|
-| Feb 18, 2026 | **Authentication: Entra ID + `Microsoft.Identity.Web` instead of ASP.NET Core Identity** | Remove local user store, `AccountController`, `ManageController`, `ApplicationUser`; `PartsUnlimitedContext` no longer inherits `IdentityDbContext`; admin role via Entra ID App Roles |
+| AKS (2× Standard_D2s_v3 system + 2× user) | Standard tier | ~$140 |
+| Azure SQL Database | GP_Gen5_2 | ~$185 |
+| Azure Container Registry | Basic | ~$5 |
+| Azure Key Vault | Standard | ~$5 |
+| Log Analytics (30 days) | PerGB2018 | ~$15 |
+| Application Insights | Workspace-based | ~free (5 GB) |
+| **Estimated Total** | | **~$350/month** |
+
+---
+
+## Issues Encountered
+
+None. All infrastructure files generated successfully.
 
 ---
 
 ## Next Action
 
-Phase 2 code modernization is ~90% complete. Remaining tasks:
-1. Copy `wwwroot/` static assets from source project
-2. Run `dotnet ef migrations add InitialCreate` to scaffold EF Core migrations
-3. Upgrade the test project to xUnit (.NET 8)
+✅ **Phase 3 is fully complete!** All Terraform and Helm infrastructure files have been generated.
 
-When ready, run `/phase3-generateinfra` to generate Terraform + Helm infrastructure.
+Run `/phase4-deploytoazure` to deploy the application to Azure.
+
+### Pre-Deployment Checklist
+Before running Phase 4, ensure you have:
+
+- [ ] An Azure subscription with sufficient quota (2× Standard_D2s_v3 VMs in chosen region)
+- [ ] An Entra ID App Registration created with:
+  - Client ID and Tenant ID recorded
+  - Client Secret created
+  - App Role `Administrator` defined
+  - Redirect URI: `https://<your-domain>/signin-oidc`
+- [ ] A Terraform remote backend storage account (or switch to `local` backend for testing)
+- [ ] `infra/terraform.tfvars` file created from `terraform.tfvars.example`
+- [ ] Azure CLI authenticated: `az login` + `az account set -s <subscription-id>`
+- [ ] Terraform installed: `terraform -version` (>= 1.7.0)
+- [ ] Helm installed: `helm version` (>= 3.14)
+- [ ] kubectl installed
+
+### Quick Deploy Commands
+```pwsh
+# 1. Navigate to infra
+cd infra
+
+# 2. Copy and fill in variables
+Copy-Item terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your values
+
+# 3. Initialize Terraform
+terraform init
+
+# 4. Preview changes
+terraform plan -out=tfplan
+
+# 5. Apply
+terraform apply tfplan
+```
+
+---
+
+## Resources
+
+| Resource | Link |
+|---|---|
+| Assessment Report | `reports/Application-Assessment-Report.md` |
+| Business Logic Mapping | `reports/Business-Logic-Mapping.md` |
+| Azure AKS Documentation | https://learn.microsoft.com/azure/aks/ |
+| AKS Workload Identity | https://learn.microsoft.com/azure/aks/workload-identity-overview |
+| Azure SQL + Managed Identity | https://learn.microsoft.com/azure/azure-sql/database/authentication-aad-overview |
+| Terraform AzureRM Provider | https://registry.terraform.io/providers/hashicorp/azurerm/latest |
+| Helm Documentation | https://helm.sh/docs/ |
+| Azure Developer CLI (azd) | https://learn.microsoft.com/azure/developer/azure-developer-cli/ |

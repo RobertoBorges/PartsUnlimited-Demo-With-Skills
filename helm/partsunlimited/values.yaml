@@ -1,0 +1,119 @@
+# Default values for partsunlimited. Override per environment.
+
+replicaCount: 2
+
+image:
+  repository: ""          # Set by Terraform: acr<name>.azurecr.io/partsunlimited
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: "partsunlimited-sa"
+  annotations: {}           # workload identity annotation injected by Terraform
+
+workloadIdentity:
+  clientId: ""              # Set by Terraform: UAMI client ID
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: partsunlimited.example.com   # Replace with your domain
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: partsunlimited-tls
+      hosts:
+        - partsunlimited.example.com
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "512Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Application configuration
+keyvault:
+  vaultUri: ""              # Set by Terraform
+
+appInsights:
+  connectionString: ""      # Set by Terraform
+
+sql:
+  server: ""                # Set by Terraform (FQDN)
+  database: "sqldb-partsunlimited"
+
+entra:
+  tenantId: ""              # Set by Terraform
+  clientId: ""              # Set by Terraform
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  failureThreshold: 3
+
+podAnnotations:
+  azure.workload.identity/use: "true"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - partsunlimited
+          topologyKey: kubernetes.io/hostname

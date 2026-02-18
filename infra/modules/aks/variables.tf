@@ -1,0 +1,12 @@
+variable "resource_group_name"        { type = string }
+variable "location"                   { type = string }
+variable "prefix"                     { type = string }
+variable "tags"                       { type = map(string) }
+variable "kubernetes_version"         { type = string }
+variable "system_node_count"          { type = number }
+variable "system_vm_size"             { type = string }
+variable "user_node_count"            { type = number }
+variable "user_vm_size"               { type = string }
+variable "vnet_subnet_id"             { type = string }
+variable "log_analytics_workspace_id" { type = string }
+variable "acr_id"                     { type = string }

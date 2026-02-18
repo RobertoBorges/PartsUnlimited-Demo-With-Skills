@@ -1,0 +1,30 @@
+# Copy this file to terraform.tfvars and fill in the values.
+# terraform.tfvars is gitignored — never commit secrets.
+
+location    = "eastus"
+environment = "dev"
+project     = "partsunlimited"
+
+# Entra ID — obtained from Azure portal > App registrations
+entra_tenant_id     = "<your-tenant-id>"
+entra_client_id     = "<your-client-id>"
+entra_client_secret = "<create-and-copy-client-secret>"
+
+# AKS
+aks_kubernetes_version = "1.29"
+aks_system_node_count  = 2
+aks_system_vm_size     = "Standard_D2s_v3"
+aks_user_node_count    = 2
+aks_user_vm_size       = "Standard_D2s_v3"
+
+# Azure SQL — password is bootstrap-only; rotate immediately after first deploy
+sql_admin_login    = "sqladmin"
+sql_admin_password = "<strong-random-password>"
+sql_sku_name       = "GP_Gen5_2"
+
+# Container image tag
+app_image_tag = "latest"
+
+# Azure ML (leave blank to disable recommendation engine)
+azure_ml_base_url    = ""
+azure_ml_account_key = ""
