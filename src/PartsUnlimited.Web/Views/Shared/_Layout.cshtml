@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Parts Unlimited</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                            data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Parts Unlimited</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li><a asp-area="" asp-controller="Store" asp-action="Index">Shop</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li><a asp-area="" asp-controller="ShoppingCart" asp-action="Index">Cart</a></li>
+                            <li><a asp-area="" asp-controller="Orders" asp-action="Index">Orders</a></li>
+                            @if (User.IsInRole("Administrator") || User.IsInRole("ManageStore"))
+                            {
+                                <li><a asp-area="Admin" asp-controller="StoreManager" asp-action="Index">Admin</a></li>
+                            }
+                            <li>
+                                <form asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignOut"
+                                      method="post" id="logoutForm">
+                                    <button type="submit" class="btn btn-link navbar-btn navbar-link">
+                                        Sign out (@User.Identity.Name)
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li><a asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignIn">Sign In</a></li>
+                        }
+                        <li>
+                            <form asp-area="" asp-controller="Search" asp-action="Index" method="get">
+                                <input type="text" name="q" class="form-control" placeholder="Search..." />
+                                <button type="submit" class="btn btn-default">Search</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @RenderSection("prebody", required: false)
+
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - Parts Unlimited</p>
+        </footer>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <!-- SignalR client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    @await RenderSectionAsync("scripts", required: false)
+</body>
+</html>

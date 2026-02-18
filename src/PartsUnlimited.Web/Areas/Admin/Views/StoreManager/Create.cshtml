@@ -1,0 +1,55 @@
+@model PartsUnlimited.Models.Product
+@{
+    ViewData["Title"] = "Create Product";
+}
+<h2>Create Product</h2>
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Price"></label>
+        <input asp-for="Price" class="form-control" />
+        <span asp-validation-for="Price" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="SalePrice"></label>
+        <input asp-for="SalePrice" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="SkuNumber"></label>
+        <input asp-for="SkuNumber" class="form-control" />
+        <span asp-validation-for="SkuNumber" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+        <label asp-for="ProductArtUrl"></label>
+        <input asp-for="ProductArtUrl" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="CategoryId">Category</label>
+        <select asp-for="CategoryId" asp-items="ViewBag.CategoryId" class="form-control">
+            <option value="">-- Select Category --</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label asp-for="Inventory"></label>
+        <input asp-for="Inventory" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="LeadTime"></label>
+        <input asp-for="LeadTime" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="ProductDetails">Product Details (JSON)</label>
+        <textarea asp-for="ProductDetails" class="form-control" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a asp-action="Index" class="btn btn-default">Cancel</a>
+</form>

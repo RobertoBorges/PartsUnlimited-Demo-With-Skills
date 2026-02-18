@@ -1,0 +1,12 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="container">
+    <h2>Access Denied</h2>
+    <p>Sign-in with Entra ID is required to access this page.</p>
+    <p>To enable authentication, update the <code>AzureAd</code> section in <code>appsettings.Development.json</code>
+       with your Entra ID <strong>TenantId</strong> and <strong>ClientId</strong> values,
+       then restart the application.</p>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-default">Return Home</a>
+</div>

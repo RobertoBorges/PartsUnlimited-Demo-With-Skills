@@ -1,0 +1,17 @@
+@model Microsoft.AspNetCore.Mvc.ProblemDetails
+@{
+    ViewData["Title"] = "Error";
+}
+<hgroup>
+    <h1 class="text-danger">Error.</h1>
+    <h2 class="text-danger">An error occurred while processing your request.</h2>
+</hgroup>
+
+@if (Model?.Status == 404)
+{
+    <p>The resource you requested was not found.</p>
+}
+else
+{
+    <p>Please try again later. If the problem persists, contact support.</p>
+}

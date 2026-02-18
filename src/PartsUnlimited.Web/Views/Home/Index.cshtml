@@ -1,0 +1,76 @@
+@model PartsUnlimited.ViewModels.HomeViewModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+@section prebody {
+    <div class="hero-display">
+        <div id="jumbotron-carousel" class="carousel slide" data-ride="carousel">
+            <div class="carousel-inner" role="listbox">
+                <div class="item active" style="background-image: url('/Images/hero_image1.jpg')">
+                    <a asp-controller="Store" asp-action="Browse" asp-route-categoryId="5" class="carousel-wrapper-link"></a>
+                    <p>All oil and filters - 50% off</p>
+                    <div class="carousel-caption hidden-xs hidden-sm">
+                        <a asp-controller="Store" asp-action="Browse" asp-route-categoryId="5" class="carousel-link">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="featured-areas">
+    <div class="container">
+        <section>
+            <h2>New Arrivals</h2>
+            <div class="row">
+                @foreach (var product in Model.NewProducts)
+                {
+                    <div class="col-md-3">
+                        <div class="list-item-part">
+                            <a asp-controller="Store" asp-action="Details" asp-route-id="@product.ProductId">
+                                <img src="/Images/@product.ProductArtUrl" alt="@product.Title" class="img-responsive" />
+                                <h5>@product.Title</h5>
+                                <p>@product.Price.ToString("C")</p>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+        <section class="section-alt">
+            <h2>Top Selling</h2>
+            <div class="row">
+                @foreach (var product in Model.TopSellingProducts)
+                {
+                    <div class="col-md-3">
+                        <div class="list-item-part">
+                            <a asp-controller="Store" asp-action="Details" asp-route-id="@product.ProductId">
+                                <img src="/Images/@product.ProductArtUrl" alt="@product.Title" class="img-responsive" />
+                                <h5>@product.Title</h5>
+                                <p>@product.Price.ToString("C")</p>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // Connect to announcement hub
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/announcement")
+            .build();
+
+        connection.on("announcement", function (product) {
+            console.log("New product: " + product.title);
+        });
+
+        connection.start().catch(err => console.error(err));
+
+        $('.carousel').carousel();
+    </script>
+}

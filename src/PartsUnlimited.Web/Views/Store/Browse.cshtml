@@ -1,0 +1,21 @@
+@model PartsUnlimited.ViewModels.ProductsViewModel
+@{
+    ViewData["Title"] = Model.Category;
+}
+<section class="product-list">
+    <h2>@Model.Category</h2>
+    <div class="row">
+        @foreach (var product in Model.Products)
+        {
+            <div class="col-md-3">
+                <div class="list-item-part">
+                    <a asp-controller="Store" asp-action="Details" asp-route-id="@product.ProductId">
+                        <img src="/Images/@product.ProductArtUrl" alt="@product.Title" class="img-responsive" />
+                        <h5>@product.Title</h5>
+                        <p>@product.Price.ToString("C")</p>
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</section>

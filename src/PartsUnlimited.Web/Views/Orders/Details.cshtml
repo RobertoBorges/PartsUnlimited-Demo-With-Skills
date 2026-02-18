@@ -1,0 +1,38 @@
+@model PartsUnlimited.ViewModels.OrdersViewModel
+@{
+    var order = Model.SelectedOrder!;
+    ViewData["Title"] = $"Order #{order.OrderId}";
+}
+<h2>Order #@order.OrderId</h2>
+<dl class="dl-horizontal">
+    <dt>Date</dt><dd>@order.OrderDate.ToString("f")</dd>
+    <dt>Name</dt><dd>@order.Name</dd>
+    <dt>Address</dt><dd>@order.Address, @order.City, @order.State @order.PostalCode</dd>
+    <dt>Email</dt><dd>@order.Email</dd>
+</dl>
+
+<table class="table">
+    <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+    <tbody>
+        @foreach (var d in order.OrderDetails)
+        {
+            <tr>
+                <td>@d.Product?.Title</td>
+                <td>@d.Count</td>
+                <td>@d.UnitPrice.ToString("C")</td>
+                <td>@((d.Count * d.UnitPrice).ToString("C"))</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.OrderCostSummary != null)
+{
+    <dl class="dl-horizontal">
+        <dt>Subtotal</dt><dd>@Model.OrderCostSummary.CartSubTotal</dd>
+        <dt>Shipping</dt><dd>@Model.OrderCostSummary.CartShipping</dd>
+        <dt>Tax</dt><dd>@Model.OrderCostSummary.CartTax</dd>
+        <dt><strong>Total</strong></dt><dd><strong>@Model.OrderCostSummary.CartTotal</strong></dd>
+    </dl>
+}
+<a asp-action="Index" class="btn btn-default">Back to Orders</a>

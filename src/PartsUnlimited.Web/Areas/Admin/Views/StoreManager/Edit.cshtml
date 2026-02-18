@@ -1,0 +1,48 @@
+@model PartsUnlimited.Models.Product
+@{
+    ViewData["Title"] = "Edit Product";
+}
+<h2>Edit: @Model.Title</h2>
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="ProductId" />
+    <input type="hidden" asp-for="Created" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Price"></label>
+        <input asp-for="Price" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="SalePrice"></label>
+        <input asp-for="SalePrice" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="SkuNumber"></label>
+        <input asp-for="SkuNumber" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+        <label asp-for="ProductArtUrl"></label>
+        <input asp-for="ProductArtUrl" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="CategoryId">Category</label>
+        <select asp-for="CategoryId" asp-items="ViewBag.CategoryId" class="form-control"></select>
+    </div>
+    <div class="form-group">
+        <label asp-for="Inventory"></label>
+        <input asp-for="Inventory" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="LeadTime"></label>
+        <input asp-for="LeadTime" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-default">Cancel</a>
+</form>

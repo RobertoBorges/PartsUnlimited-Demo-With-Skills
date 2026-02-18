@@ -1,0 +1,50 @@
+@model PartsUnlimited.ViewModels.ProductViewModel
+@{
+    ViewData["Title"] = Model.Product.Title;
+    var p = Model.Product;
+}
+<section>
+    <div class="row">
+        <div class="col-md-4">
+            <img src="/Images/@p.ProductArtUrl" alt="@p.Title" class="img-responsive" />
+        </div>
+        <div class="col-md-8">
+            <h2>@p.Title</h2>
+            <p class="lead">@p.Price.ToString("C")</p>
+            <p>@p.Description</p>
+            @if (p.Inventory > 0)
+            {
+                <a asp-controller="ShoppingCart" asp-action="AddToCart" asp-route-id="@p.ProductId"
+                   class="btn btn-primary btn-lg">Add to Cart</a>
+            }
+            else if (p.LeadTime > 0)
+            {
+                <p class="text-warning">Lead time: @p.LeadTime days</p>
+                <a asp-controller="ShoppingCart" asp-action="AddToCart" asp-route-id="@p.ProductId"
+                   class="btn btn-default">Add to Cart</a>
+            }
+            else
+            {
+                <p class="text-danger">Out of stock</p>
+            }
+        </div>
+    </div>
+
+    @if (Model.Recommendations.Any())
+    {
+        <section class="section-alt">
+            <h3>Customers Also Bought</h3>
+            <div class="row">
+                @foreach (var rec in Model.Recommendations)
+                {
+                    <div class="col-md-3">
+                        <a asp-controller="Store" asp-action="Details" asp-route-id="@rec.ProductId">
+                            <img src="/Images/@rec.ProductArtUrl" alt="@rec.Title" class="img-responsive" />
+                            <h5>@rec.Title</h5>
+                        </a>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</section>

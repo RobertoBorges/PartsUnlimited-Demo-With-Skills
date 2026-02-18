@@ -16,7 +16,7 @@ handoffs:
     send: false
   - label: "Phase 2: Migrate Code"
     agent: Code Migration Modernization Agent
-    prompt: /Phase2-MigrateCode promptstart the code migration and modernization process based on the Application-Assessment-Report.md report and plan.
+    prompt: /Phase2-MigrateCode start the code migration and modernization process based on the Application-Assessment-Report.md report and plan.
     send: false
   - label: "Phase 3: Generate Infrastructure"
     agent: Code Migration Modernization Agent

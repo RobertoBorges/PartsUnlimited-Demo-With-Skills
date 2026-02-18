@@ -1,0 +1,7 @@
+@model PartsUnlimited.Models.Order
+@{
+    ViewData["Title"] = "Order Complete";
+}
+<h2>Thank you for your order!</h2>
+<p>Your order #@Model.OrderId has been placed.</p>
+<p><a asp-controller="Orders" asp-action="Index">View your orders</a></p>

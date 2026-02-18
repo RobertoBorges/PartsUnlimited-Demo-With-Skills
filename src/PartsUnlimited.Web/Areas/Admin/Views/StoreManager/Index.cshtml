@@ -1,0 +1,33 @@
+@model IEnumerable<PartsUnlimited.Models.Product>
+@{
+    ViewData["Title"] = "Product Management";
+}
+<h2>Products</h2>
+<p><a asp-action="Create" class="btn btn-primary">Create New</a></p>
+<table class="table">
+    <thead>
+        <tr>
+            <th><a asp-action="Index" asp-route-sortField="Name" asp-route-sortDirection="Up">Name</a></th>
+            <th><a asp-action="Index" asp-route-sortField="Price" asp-route-sortDirection="Up">Price</a></th>
+            <th>SKU</th>
+            <th>Inventory</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Title</td>
+                <td>@p.Price.ToString("C")</td>
+                <td>@p.SkuNumber</td>
+                <td>@p.Inventory</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@p.ProductId">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@p.ProductId">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@p.ProductId">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

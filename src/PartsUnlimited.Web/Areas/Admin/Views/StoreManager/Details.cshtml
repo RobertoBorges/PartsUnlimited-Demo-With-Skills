@@ -1,0 +1,15 @@
+@model PartsUnlimited.Models.Product
+@{
+    ViewData["Title"] = Model.Title;
+}
+<h2>@Model.Title</h2>
+<dl class="dl-horizontal">
+    <dt>SKU</dt><dd>@Model.SkuNumber</dd>
+    <dt>Price</dt><dd>@Model.Price.ToString("C")</dd>
+    <dt>Sale Price</dt><dd>@Model.SalePrice.ToString("C")</dd>
+    <dt>Inventory</dt><dd>@Model.Inventory</dd>
+    <dt>Lead Time</dt><dd>@Model.LeadTime days</dd>
+    <dt>Category</dt><dd>@Model.Category?.Name</dd>
+</dl>
+<a asp-action="Edit" asp-route-id="@Model.ProductId" class="btn btn-default">Edit</a>
+<a asp-action="Index" class="btn btn-default">Back</a>
