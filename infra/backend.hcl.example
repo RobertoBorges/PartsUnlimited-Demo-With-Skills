@@ -1,0 +1,8 @@
+# Example backend config for CI/CD (remote state)
+# DO NOT commit your actual backend.hcl - it contains environment-specific values.
+# See .github/workflows/infra-apply.yml for CI/CD usage.
+resource_group_name  = "rg-partsunlimited-dev"
+storage_account_name = "stpartsunlimitedtfstate"
+container_name       = "tfstate"
+key                  = "partsunlimited.tfstate"
+use_azuread_auth     = true

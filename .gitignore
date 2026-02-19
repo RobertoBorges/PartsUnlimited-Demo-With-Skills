@@ -56,3 +56,7 @@ override.tf.json
 *_override.tf.json
 infra/terraform.tfstate.*
 
+
+# Terraform backend config (contains env-specific values, not for source control)
+infra/backend-local.hcl
+backend.hcl

@@ -6,7 +6,10 @@
 
 ---
 
-## Current Status: ✅ Phase 4 Complete — Ready for Phase 5 (CI/CD Pipeline Setup)
+## 🎉 Current Status: ✅ MIGRATION COMPLETE — All 5 Phases Done
+
+> **Application is live on AKS:** http://20.48.128.13/  
+> **CI/CD pipelines active:** GitHub Actions (CI on PRs, CD on push to main, manual Infra)
 
 ---
 
@@ -30,7 +33,7 @@
 | **Phase 2** — Code Modernization | ✅ Complete | Feb 18, 2026 | All tasks completed |
 | **Phase 3** — Infrastructure Generation | ✅ Complete | Feb 18, 2026 | Terraform + Helm generated |
 | **Phase 4** — Deployment to Azure | ✅ Complete | Feb 18, 2026 | AKS v1.32, Canada Central, 2/2 pods Running |
-| **Phase 5** — CI/CD Pipeline Setup | ⬜ Not Started | — | GitHub Actions |
+| **Phase 5** — CI/CD Pipeline Setup | ✅ Complete | Feb 18, 2026 | GitHub Actions (CI + CD + Infra pipelines), OIDC auth, remote TF state |
 
 ---
 
@@ -40,9 +43,9 @@
 - [x] Phase 2 — Code Modernization
 - [x] Phase 3 — Infrastructure Generation
 - [x] Phase 4 — Deployment to Azure
-- [ ] Phase 5 — CI/CD Pipeline Setup
+- [x] Phase 5 — CI/CD Pipeline Setup
 
-**Completion:** 80% (4 of 5 phases complete)
+**Completion:** 🎉 **100% (5 of 5 phases complete)**
 
 ---
 
@@ -265,3 +268,68 @@ See [reports/Deployment-Report.md](Deployment-Report.md) for full deployment det
 - Storage account: `stpartsunlimiteddev6i01` (Terraform-managed, `shared_access_key_enabled = false`)
 - Container: `dataprotection` (created via ARM template)
 - Helm revision: **6** (both pods Running, Data Protection shared key ring active)
+
+---
+
+## Phase 5 Deliverables — CI/CD Pipeline Setup ✅
+
+### GitHub Actions Workflows
+
+| File | Trigger | Purpose |
+|---|---|---|
+| `.github/workflows/ci.yml` | PR → `main` | dotnet build/test, Docker validate, Trivy scan, Terraform validate, NuGet audit |
+| `.github/workflows/cd.yml` | Push to `main` | Build + push Docker (`:latest` + `:<SHA>`) to ACR, `kubectl rollout restart`, health check |
+| `.github/workflows/infra-apply.yml` | `workflow_dispatch` | Terraform plan / apply / destroy with remote state |
+
+### Azure Infrastructure for CI/CD
+
+| Resource | Details |
+|---|---|
+| App Registration | `partsunlimited-github-actions` (App ID `73a5b6c5-70a8-4df3-ae32-2c34335b02fb`) |
+| OIDC Federated Credentials | `github-main` (branch push), `github-pr` (pull request) |
+| TF State Storage Account | `stpartsunlimitedtfstate` (SharedKey disabled, Azure AD auth only) |
+| TF State Container | `tfstate` / key `partsunlimited-local.tfstate` (local dev) |
+
+### RBAC Roles Assigned (GitHub Actions SP)
+
+| Role | Scope |
+|---|---|
+| `Contributor` | `rg-partsunlimited-dev` |
+| `AcrPush` | `acrpartsunlimiteddevy5zz` |
+| `Key Vault Secrets Officer` | `kv-partsunlimited-dev` |
+| `Key Vault Crypto Officer` | `kv-partsunlimited-dev` |
+| `Azure Kubernetes Service Cluster Admin Role` | `aks-partsunlimited-dev` |
+| `Storage Blob Data Owner` | `stpartsunlimitedtfstate/tfstate` container |
+
+### Scripts & Reports
+
+| File | Purpose |
+|---|---|
+| `scripts/bootstrap-cicd.ps1` | Automates full CI/CD Azure setup (SP, RBAC, storage, GitHub secrets) |
+| `infra/backend-local.hcl` | Local dev TF backend config (gitignored) |
+| `infra/backend.hcl.example` | Reference template for backend config |
+| `reports/cicd_setup_report.md` | Full CI/CD pipeline architecture and operations guide |
+
+### Security Highlights
+
+- [x] **No stored credentials** — All Azure auth via OIDC token exchange
+- [x] **Container scanning** — Trivy on every PR and every CD build
+- [x] **Dependency audit** — `dotnet list package --vulnerable` on every PR
+- [x] **SHA-pinned images** — `:latest` + `:<SHA>` tags for full traceability
+- [x] **Remote TF state** — Encrypted at rest in Azure Blob Storage, Azure AD auth only
+- [x] **Concurrency control** — CD pipeline uses `cancel-in-progress: false` to prevent race conditions
+
+---
+
+## 🏁 Migration Complete
+
+The PartsUnlimited application has been fully migrated from **.NET Framework 4.5.1** to **.NET 8 LTS** and deployed to **Azure Kubernetes Service** in Canada Central.
+
+| Milestone | Status |
+|-----------|--------|
+| Application live on AKS | ✅ http://20.48.128.13/ |
+| CI pipeline (PR validation) | ✅ `.github/workflows/ci.yml` |
+| CD pipeline (auto-deploy on merge) | ✅ `.github/workflows/cd.yml` |
+| Infrastructure pipeline (Terraform) | ✅ `.github/workflows/infra-apply.yml` |
+| Remote Terraform state | ✅ `stpartsunlimitedtfstate` Azure Blob |
+| All bug fixes applied | ✅ Issues 1–8 resolved |

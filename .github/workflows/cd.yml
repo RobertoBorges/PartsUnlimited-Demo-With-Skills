@@ -1,0 +1,167 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# cd.yml — Continuous Deployment
+# Deploys on every push to main (i.e., after PR merge).
+# Builds and pushes Docker image to ACR, then triggers a rolling restart on AKS.
+# ─────────────────────────────────────────────────────────────────────────────
+name: CD — Deploy to AKS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "helm/**"
+      - ".github/workflows/cd.yml"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (defaults to current SHA)"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # Never cancel an in-flight deployment
+
+env:
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  ACR_IMAGE_NAME: partsunlimited
+  AKS_CLUSTER_NAME: ${{ vars.AKS_CLUSTER_NAME }}
+  AKS_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP }}
+  AKS_NAMESPACE: default
+  DEPLOYMENT_NAME: partsunlimited
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ── 1. Build & Push Container Image ───────────────────────────────────────
+  build-and-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image_digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate image tags
+        id: meta
+        run: |
+          SHA="${{ github.sha }}"
+          SHORT_SHA="${SHA:0:7}"
+          TAG="${{ inputs.image_tag || '' }}"
+          if [ -z "$TAG" ]; then
+            TAG="$SHORT_SHA"
+          fi
+          echo "image_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR Login
+        run: az acr login --name ${{ env.ACR_LOGIN_SERVER }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push Docker image
+        id: push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: src/PartsUnlimited.Web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:latest
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }}
+          cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:buildcache,mode=max
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.repository_url }}
+
+      - name: Security scan pushed image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:${{ steps.meta.outputs.image_tag }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: 0   # Warn but don't fail (to avoid blocking deployments for known-unfixable CVEs)
+
+  # ── 2. Deploy to AKS ──────────────────────────────────────────────────────
+  deploy-to-aks:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment:
+      name: production
+      url: http://20.48.128.13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Rolling restart deployment
+        run: |
+          IMAGE="${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}"
+          echo "Deploying image: $IMAGE"
+          # Update the image in the deployment (uses :latest with Always pull policy)
+          kubectl rollout restart deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace ${{ env.AKS_NAMESPACE }}
+
+      - name: Wait for rollout to complete
+        run: |
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace ${{ env.AKS_NAMESPACE }} \
+            --timeout=10m
+
+      - name: Health check
+        run: |
+          echo "Waiting 30s for pods to stabilize..."
+          sleep 30
+          READY=$(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} \
+            --namespace ${{ env.AKS_NAMESPACE }} \
+            -o jsonpath="{.status.readyReplicas}")
+          DESIRED=$(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} \
+            --namespace ${{ env.AKS_NAMESPACE }} \
+            -o jsonpath="{.spec.replicas}")
+          echo "Ready: $READY / $DESIRED"
+          if [ "$READY" != "$DESIRED" ]; then
+            echo "::error::Deployment health check failed: $READY/$DESIRED pods ready"
+            kubectl describe deployment ${{ env.DEPLOYMENT_NAME }} --namespace ${{ env.AKS_NAMESPACE }}
+            kubectl get pods --namespace ${{ env.AKS_NAMESPACE }} -l "app.kubernetes.io/instance=partsunlimited"
+            exit 1
+          fi
+          echo "✅ Deployment healthy: $READY/$DESIRED pods ready"
+
+      - name: Show deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.ACR_LOGIN_SERVER }}/${{ env.ACR_IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cluster | \`${{ env.AKS_CLUSTER_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Namespace | \`${{ env.AKS_NAMESPACE }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY

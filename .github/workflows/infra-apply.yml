@@ -1,0 +1,145 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# infra-apply.yml — Infrastructure Deployment (Terraform)
+# Manual trigger only (workflow_dispatch) to prevent accidental infra changes.
+# Uses Azure OIDC for authentication and Azure Blob Storage for remote state.
+#
+# PREREQUISITES (run scripts/bootstrap-cicd.ps1 once before first use):
+#   - GitHub secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#   - GitHub vars: TF_STATE_RESOURCE_GROUP, TF_STATE_STORAGE_ACCOUNT,
+#                  TF_STATE_CONTAINER, ACR_LOGIN_SERVER, AKS_CLUSTER_NAME,
+#                  AKS_RESOURCE_GROUP
+#   - GitHub vars (tfvars): TF_VAR_ENTRA_CLIENT_ID, TF_VAR_ENTRA_TENANT_ID,
+#                            TF_VAR_LOCATION, TF_VAR_ENVIRONMENT,
+#                            TF_VAR_AKS_KUBERNETES_VERSION
+#   - GitHub secrets (sensitive tfvars): TF_VAR_ENTRA_CLIENT_SECRET,
+#                                        TF_VAR_SQL_ADMIN_LOGIN,
+#                                        TF_VAR_SQL_ADMIN_PASSWORD
+# ─────────────────────────────────────────────────────────────────────────────
+name: Infra — Terraform Plan / Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action to perform"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+        default: plan
+      target:
+        description: "Optional: specific Terraform target (e.g. module.storage)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write   # For posting plan output as PR comment
+
+env:
+  TF_IN_AUTOMATION: "true"
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_AZUREAD: "true"
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.action == 'apply' && 'production' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials (needed for Helm provider)
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ vars.AKS_RESOURCE_GROUP }} \
+            --name ${{ vars.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.7"
+
+      - name: Terraform Init (remote state)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=partsunlimited.tfstate" \
+            -backend-config="use_azuread_auth=true"
+        working-directory: infra
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          TARGET_ARGS=""
+          if [ -n "${{ inputs.target }}" ]; then
+            TARGET_ARGS="-target=${{ inputs.target }}"
+          fi
+          terraform plan \
+            -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var="entra_client_id=${{ vars.TF_VAR_ENTRA_CLIENT_ID }}" \
+            -var="entra_client_secret=${{ secrets.TF_VAR_ENTRA_CLIENT_SECRET }}" \
+            -var="entra_tenant_id=${{ vars.TF_VAR_ENTRA_TENANT_ID }}" \
+            -var="sql_admin_login=${{ secrets.TF_VAR_SQL_ADMIN_LOGIN }}" \
+            -var="sql_admin_password=${{ secrets.TF_VAR_SQL_ADMIN_PASSWORD }}" \
+            -var="location=${{ vars.TF_VAR_LOCATION }}" \
+            -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
+            -var="aks_kubernetes_version=${{ vars.TF_VAR_AKS_KUBERNETES_VERSION }}" \
+            $TARGET_ARGS \
+            -out=tfplan \
+            -no-color 2>&1 | tee plan_output.txt
+          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
+        working-directory: infra
+
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: |
+            infra/tfplan
+            infra/plan_output.txt
+
+      - name: Post plan summary
+        run: |
+          echo "## Terraform Plan Output" >> $GITHUB_STEP_SUMMARY
+          echo '```terraform' >> $GITHUB_STEP_SUMMARY
+          tail -50 infra/plan_output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Terraform Apply
+        if: inputs.action == 'apply'
+        run: |
+          terraform apply tfplan
+        working-directory: infra
+
+      - name: Terraform Destroy
+        if: inputs.action == 'destroy'
+        run: |
+          terraform destroy \
+            -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var="entra_client_id=${{ vars.TF_VAR_ENTRA_CLIENT_ID }}" \
+            -var="entra_client_secret=${{ secrets.TF_VAR_ENTRA_CLIENT_SECRET }}" \
+            -var="entra_tenant_id=${{ vars.TF_VAR_ENTRA_TENANT_ID }}" \
+            -var="sql_admin_login=${{ secrets.TF_VAR_SQL_ADMIN_LOGIN }}" \
+            -var="sql_admin_password=${{ secrets.TF_VAR_SQL_ADMIN_PASSWORD }}" \
+            -var="location=${{ vars.TF_VAR_LOCATION }}" \
+            -var="environment=${{ vars.TF_VAR_ENVIRONMENT }}" \
+            -var="aks_kubernetes_version=${{ vars.TF_VAR_AKS_KUBERNETES_VERSION }}" \
+            -auto-approve
+        working-directory: infra

@@ -20,9 +20,10 @@ terraform {
     }
   }
 
-  backend "local" {
-    path = "terraform.tfstate"
-  }
+  # Backend is configured via -backend-config flags (local dev) or GitHub Actions secrets (CI/CD).
+  # Local dev:  terraform init -backend-config=backend-local.hcl
+  # CI/CD:      see .github/workflows/infra-apply.yml
+  backend "azurerm" {}
 }
 
 provider "azurerm" {
@@ -40,6 +41,9 @@ provider "azurerm" {
 
 provider "azuread" {}
 
+# The AKS context name matches the cluster name. Run:
+#   az aks get-credentials --resource-group <rg> --name aks-partsunlimited-dev
+# to populate ~/.kube/config before running Terraform locally.
 provider "helm" {
   kubernetes {
     config_path    = "~/.kube/config"
