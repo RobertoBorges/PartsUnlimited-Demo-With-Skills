@@ -69,6 +69,30 @@ resource "azurerm_role_assignment" "deployer_kv_secrets_officer" {
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
+# RBAC: deploying principal → Key Vault Crypto Officer (to create/manage keys)
+resource "azurerm_role_assignment" "deployer_kv_crypto_officer" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Crypto Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+# RBAC: workload identity → Key Vault Crypto User (to wrap/unwrap Data Protection keys)
+resource "azurerm_role_assignment" "workload_kv_crypto_user" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Crypto User"
+  principal_id         = var.workload_identity_id
+}
+
+# Data Protection RSA key — wraps the keys persisted in Blob Storage
+resource "azurerm_key_vault_key" "dataprotection" {
+  name         = "dataprotection-key"
+  key_vault_id = azurerm_key_vault.main.id
+  key_type     = "RSA"
+  key_size     = 2048
+  key_opts     = ["wrapKey", "unwrapKey"]
+  depends_on   = [azurerm_role_assignment.deployer_kv_crypto_officer]
+}
+
 # Secrets
 resource "azurerm_key_vault_secret" "entra_client_id" {
   name         = "EntraClientId"

@@ -1,4 +1,4 @@
-﻿html {
+html {
   height: 100%; }
 
 body {
@@ -240,7 +240,7 @@ header .navbar.navbar-default {
       right: 10px;
       top: 20px; }
       header .navbar.navbar-default .primary-menu .logo .cart a {
-        background-image: url('../images/cart_icon.png');
+        background-image: url('../Images/cart_icon.png');
         display: block;
         width: 40px;
         height: 65px;
@@ -253,7 +253,7 @@ header .navbar.navbar-default {
         background-color: transparent;
         font-style: normal; }
         header .navbar.navbar-default .primary-menu .logo .cart a:hover {
-          background-image: url('../images/cart_mo_icon.png'); }
+          background-image: url('../Images/cart_mo_icon.png'); }
         header .navbar.navbar-default .primary-menu .logo .cart a span {
           display: block;
           width: 25px;
@@ -325,9 +325,9 @@ header .navbar.navbar-default {
           header .navbar.navbar-default .primary-menu ul li a.head-link:hover {
             background-color: transparent; }
           header .navbar.navbar-default .primary-menu ul li a.head-link#shopping-cart-link {
-            background-image: url('../images/cart_icon.png'); }
+            background-image: url('../Images/cart_icon.png'); }
             header .navbar.navbar-default .primary-menu ul li a.head-link#shopping-cart-link:hover {
-              background-image: url('../images/cart_mo_icon.png'); }
+              background-image: url('../Images/cart_mo_icon.png'); }
             header .navbar.navbar-default .primary-menu ul li a.head-link#shopping-cart-link span {
               display: block;
               width: 25px;
@@ -341,21 +341,21 @@ header .navbar.navbar-default {
               padding-top: 2px;
               padding-left: 1px; }
           header .navbar.navbar-default .primary-menu ul li a.head-link#login-link {
-            background-image: url('../images/profile_icon.png'); }
+            background-image: url('../Images/profile_icon.png'); }
             header .navbar.navbar-default .primary-menu ul li a.head-link#login-link:hover {
-              background-image: url('../images/profile_mo_icon.png'); }
+              background-image: url('../Images/profile_mo_icon.png'); }
           header .navbar.navbar-default .primary-menu ul li a.head-link#profile-link {
-            background-image: url('../images/profile_icon.png'); }
+            background-image: url('../Images/profile_icon.png'); }
             header .navbar.navbar-default .primary-menu ul li a.head-link#profile-link:hover {
-              background-image: url('../images/profile_mo_icon.png'); }
+              background-image: url('../Images/profile_mo_icon.png'); }
           header .navbar.navbar-default .primary-menu ul li a.head-link#home-link {
-            background-image: url('../images/home_icon.png'); }
+            background-image: url('../Images/home_icon.png'); }
             header .navbar.navbar-default .primary-menu ul li a.head-link#home-link:hover {
-              background-image: url('../images/home_mo_icon.png'); }
+              background-image: url('../Images/home_mo_icon.png'); }
           header .navbar.navbar-default .primary-menu ul li a.head-link#admin-link {
-            background-image: url('../images/admin_icon.png'); }
+            background-image: url('../Images/admin_icon.png'); }
             header .navbar.navbar-default .primary-menu ul li a.head-link#admin-link:hover {
-              background-image: url('../images/admin_mo_icon.png'); } }
+              background-image: url('../Images/admin_mo_icon.png'); } }
       @media screen and (min-width: 992px) {
         header .navbar.navbar-default .primary-menu ul li a.head-link {
           margin-top: 15px;
@@ -431,9 +431,9 @@ header .navbar.navbar-default {
             height: 86px;
             font-size: 14px; } }
         header .navbar.navbar-default .primary-menu ul li #search-link-box input[type='submit']#search-link {
-          background-image: url('../images/search_icon.png'); }
+          background-image: url('../Images/search_icon.png'); }
           header .navbar.navbar-default .primary-menu ul li #search-link-box input[type='submit']#search-link:hover {
-            background-image: url('../images/search_mo_icon.png');
+            background-image: url('../Images/search_mo_icon.png');
             color: #1C367C; }
   header .navbar.navbar-default .alert {
     margin-bottom: 0;
@@ -478,7 +478,7 @@ header .search-box {
     background-color: transparent;
     width: auto;
     min-width: 30px;
-    background: url('../images/mobile_search_icon.png') no-repeat;
+    background: url('../Images/mobile_search_icon.png') no-repeat;
     background-size: 24px;
     padding: 0;
     height: 39px; }

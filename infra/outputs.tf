@@ -43,3 +43,18 @@ output "aks_oidc_issuer_url" {
   description = "OIDC issuer URL for AKS Workload Identity federation."
   value       = module.aks.oidc_issuer_url
 }
+
+output "storage_account_name" {
+  description = "Storage account name used for Data Protection key ring."
+  value       = module.storage.storage_account_name
+}
+
+output "dp_blob_uri" {
+  description = "Blob URI for Data Protection keys."
+  value       = module.storage.dp_blob_uri
+}
+
+output "dp_key_id" {
+  description = "Key Vault key ID used to wrap Data Protection keys."
+  value       = module.keyvault.dp_key_id
+}

@@ -21,3 +21,5 @@ data:
   AzureAd__TenantId: {{ .Values.entra.tenantId | quote }}
   AzureAd__ClientId: {{ .Values.entra.clientId | quote }}
   AzureAd__CallbackPath: "/signin-oidc"
+  DataProtection__BlobUri: {{ .Values.dataProtection.blobUri | quote }}
+  DataProtection__KeyVaultKeyId: {{ .Values.dataProtection.keyVaultKeyId | quote }}

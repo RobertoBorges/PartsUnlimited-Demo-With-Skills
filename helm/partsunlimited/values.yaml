@@ -69,6 +69,10 @@ entra:
   tenantId: ""              # Set by Terraform
   clientId: ""              # Set by Terraform
 
+dataProtection:
+  blobUri: ""               # Set by Terraform: https://<sa>.blob.core.windows.net/dataprotection/keys.xml
+  keyVaultKeyId: ""         # Set by Terraform: https://<kv>.vault.azure.net/keys/dataprotection-key/
+
 # Health checks
 livenessProbe:
   httpGet:

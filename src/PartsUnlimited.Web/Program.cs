@@ -1,6 +1,10 @@
+using Azure.Extensions.AspNetCore.DataProtection.Blobs;
+using Azure.Extensions.AspNetCore.DataProtection.Keys;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
@@ -9,6 +13,12 @@ using PartsUnlimited.Models;
 using PartsUnlimited.ProductSearch;
 using PartsUnlimited.Recommendations;
 using PartsUnlimited.Utils;
+using System.Globalization;
+
+// Force en-US culture so ToString("C") always renders $ regardless of container locale
+var culture = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -127,6 +137,21 @@ builder.Services.AddApplicationInsightsTelemetry(
 builder.Services.AddHttpContextAccessor();
 
 // ---------------------------------------------------------------------------
+// Data Protection — shared key ring so all pods can decrypt OIDC state cookies
+// Requires: Azure Blob Storage (persist keys) + Key Vault RSA key (wrap keys)
+// Falls back to in-memory (single-pod / local dev) when config is absent.
+// ---------------------------------------------------------------------------
+var dpBlobUri    = builder.Configuration["DataProtection:BlobUri"];
+var dpKvKeyId    = builder.Configuration["DataProtection:KeyVaultKeyId"];
+var dpBuilder    = builder.Services.AddDataProtection().SetApplicationName("PartsUnlimited");
+if (!string.IsNullOrEmpty(dpBlobUri) && !string.IsNullOrEmpty(dpKvKeyId))
+{
+    dpBuilder
+        .PersistKeysToAzureBlobStorage(new Uri(dpBlobUri), new DefaultAzureCredential())
+        .ProtectKeysWithAzureKeyVault(new Uri(dpKvKeyId), new DefaultAzureCredential());
+}
+
+// ---------------------------------------------------------------------------
 // Build & configure middleware pipeline
 // ---------------------------------------------------------------------------
 var app = builder.Build();
@@ -140,13 +165,25 @@ var app = builder.Build();
     await PartsUnlimitedDbInitializer.SeedAsync(db);
 }
 
+var isBehindIngress = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("K8S_INGRESS"));
+
+// When running behind NGINX ingress, trust its X-Forwarded-Proto / X-Forwarded-For headers
+// so OIDC redirect URIs are constructed with the correct scheme (https://).
+if (isBehindIngress)
+{
+    var forwardedOptions = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    };
+    // Trust all internal cluster IPs — NGINX runs in a known-safe AKS pod network
+    forwardedOptions.KnownNetworks.Clear();
+    forwardedOptions.KnownProxies.Clear();
+    app.UseForwardedHeaders(forwardedOptions);
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // Only enforce HSTS/HTTPS redirect when NOT running behind a Kubernetes ingress that
-    // terminates TLS externally. Use the ASPNETCORE_FORWARDEDHEADERS_ENABLED env var
-    // (set automatically by App Service / ACA) or a custom K8S_INGRESS env var.
-    var isBehindIngress = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("K8S_INGRESS"));
     if (!isBehindIngress)
     {
         app.UseHsts();

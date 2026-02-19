@@ -85,7 +85,15 @@ module "database" {
   workload_identity_id    = module.identity.workload_identity_client_id
   workload_identity_name  = module.identity.workload_identity_name
 }
-
+# ─── Storage (Data Protection key ring) ─────────────────────────────────────
+module "storage" {
+  source                        = "./modules/storage"
+  resource_group_name           = azurerm_resource_group.main.name
+  location                      = var.location
+  prefix                        = local.prefix
+  tags                          = local.tags
+  workload_identity_principal_id = module.identity.workload_identity_principal_id
+}
 # ─── AKS Cluster ─────────────────────────────────────────────────────────────
 module "aks" {
   source                     = "./modules/aks"
@@ -180,6 +188,14 @@ resource "helm_release" "partsunlimited" {
   set {
     name  = "entra.clientId"
     value = var.entra_client_id
+  }
+  set {
+    name  = "dataProtection.blobUri"
+    value = module.storage.dp_blob_uri
+  }
+  set {
+    name  = "dataProtection.keyVaultKeyId"
+    value = module.keyvault.dp_key_id
   }
 
   depends_on = [module.aks, helm_release.nginx_ingress, module.keyvault, module.database]

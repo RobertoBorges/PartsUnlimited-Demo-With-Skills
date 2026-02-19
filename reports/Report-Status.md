@@ -236,3 +236,32 @@ See [reports/Deployment-Report.md](Deployment-Report.md) for full deployment det
 1. **DNS Setup**: Map a domain to `20.48.128.13`
 2. **TLS**: Add cert-manager + Let's Encrypt to the AKS cluster
 3. **Phase 5**: Run `/phase5-setupcicd` to configure GitHub Actions CI/CD pipeline
+
+---
+
+## Post-Deployment Bug Fixes & IaC Updates (This Session)
+
+### Additional Bug Fixes
+
+| # | Issue | Root Cause | Fix | ACR Build |
+|---|---|---|---|---|
+| 5 | Icons missing on Azure | `Site.css` lowercase `url('../images/...')` vs actual `Images/` folder (Linux case-sensitive FS) | Replaced all 15 occurrences to `url('../Images/...')` | cx5 |
+| 6 | `¤22.99` instead of `$22.99` | `dotnet/aspnet:8.0` defaults to invariant culture (`¤` symbol) | Added `CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US")` in Program.cs | cx6 |
+| 7 | OIDC redirect `http://` not `https://` | App not reading `X-Forwarded-Proto` from NGINX; AADSTS50011 error | Added `UseForwardedHeaders` middleware (gated on `K8S_INGRESS`); registered `http://partsunlimited.example.com/signin-oidc` in Entra ID | cx7 |
+| 8 | `Unable to unprotect message.State` (multi-pod) | Each pod has independent in-memory Data Protection key ring; OIDC state encrypted by Pod A cannot be decrypted by Pod B | Shared key ring: `PersistKeysToAzureBlobStorage` + `ProtectKeysWithAzureKeyVault` (RSA-2048 key in Key Vault); NuGet packages added to `.csproj` | cx8 |
+
+### IaC Completeness Updates
+
+| Resource | Change |
+|---|---|
+| `infra/modules/storage/` | **NEW** — ARM template deployment module creates storage account + blob container for Data Protection |
+| `infra/modules/keyvault/main.tf` | Added `dataprotection-key` (RSA-2048), `Key Vault Crypto Officer` role for deployer, `Key Vault Crypto User` role for UAMI |
+| `infra/main.tf` | Added `module "storage"`; wired `dataProtection.blobUri` and `dataProtection.keyVaultKeyId` into Helm release |
+| `helm/partsunlimited/` | Added `DataProtection__BlobUri` and `DataProtection__KeyVaultKeyId` to ConfigMap; `dataProtection` section in values.yaml |
+
+**Note:** AzureRM v3 provider has a known issue where it polls the blob data-plane endpoint with SharedKey auth after creating a storage account. Since the subscription enforces `AllowSharedKeyAccess = false` by Azure Policy, the storage module uses `azurerm_resource_group_template_deployment` (pure control-plane ARM) instead of `azurerm_storage_account` to avoid the 403.
+
+**Current State:**
+- Storage account: `stpartsunlimiteddev6i01` (Terraform-managed, `shared_access_key_enabled = false`)
+- Container: `dataprotection` (created via ARM template)
+- Helm revision: **6** (both pods Running, Data Protection shared key ring active)
